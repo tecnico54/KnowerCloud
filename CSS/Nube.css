@@ -1,0 +1,34 @@
+.Titulo{
+	text-align: center;
+	color: #48e;
+	font-size: 70px;
+}
+.Titulo > b{
+	color: #f46;
+}
+.Subir{
+	font-size: 50px;
+	margin: 0 15px;
+}
+.Descargar{
+	font-size: 50px;
+	margin: 0 45px;
+	float: right;
+}
+.Descargar:hover{
+	cursor: pointer;
+	color: #f46;
+}
+@media only screen and (max-width: 1280px){
+	.Descargar{
+		margin: 45px 45px;
+	}
+}
+@media only screen and (max-width: 1040px){
+	.Subir{
+		font-size: 20px;
+	}
+	.Descargar{
+		font-size: 20px;
+	}
+}
