@@ -1,60 +1,55 @@
-document.addEventListener("DOMContentLoaded", function(){
+document.addEventListener("DOMContentLoaded", function() {
     const fileInput = document.getElementById('fileInput');
     const btnDescargar = document.getElementById('btnDescargar');
-    const dbName = "ArchivosGuardados";
-    const storeName = "archivos";
-    //Abrir o crear la base de datos IndexedDB
+    // Abre (o crea) la base de datos en IndexedDB
     let db;
-    const openRequest = indexedDB.open(dbName, 1);
-    openRequest.onupgradeneeded = function(event){
+    const request = indexedDB.open("ArchivosDB", 1);
+
+    request.onupgradeneeded = function(event) {
         db = event.target.result;
-        if (!db.objectStoreNames.contains(storeName)){
-            db.createObjectStore(storeName, { keyPath: 'id', autoIncrement: true });
+        if (!db.objectStoreNames.contains("archivos")) {
+            db.createObjectStore("archivos", { keyPath: "id" });
         }
-    };   
-    openRequest.onsuccess = function(event){
+    };
+    request.onsuccess = function(event) {
         db = event.target.result;
     };
-    //Manejar la subida del archivo
-    fileInput.addEventListener('change', function(event){
+    request.onerror = function(event) {
+        console.error("Error al abrir IndexedDB", event);
+    };
+    // Guardar archivo en IndexedDB
+    fileInput.addEventListener("change", function(event) {
         const file = event.target.files[0];
-        if (file){
+        if (file) {
             const reader = new FileReader();
-            reader.onload = function(e){
-                const transaction = db.transaction([storeName], "readwrite");
-                const store = transaction.objectStore(storeName);
-                //Guardar el archivo en IndexedDB
-                const archivo = {
-                    name: file.name,
-                    type: file.type,
-                    data: e.target.result //Almacenar el archivo como ArrayBuffer
-                };
-                store.add(archivo);
-                alert('Archivo subido y guardado.');
+            reader.onload = function(e) {
+                const transaction = db.transaction(["archivos"], "readwrite");
+                const store = transaction.objectStore("archivos");
+
+                store.put({ id: "archivoGuardado", data: e.target.result, type: file.type, name: file.name });
+
+                alert("Archivo guardado en IndexedDB.");
             };
-            reader.readAsArrayBuffer(file); //Leemos el archivo como ArrayBuffer
+            reader.readAsArrayBuffer(file);
         }
     });
-    //Manejar la descarga del archivo
-    btnDescargar.addEventListener('click', function(){
-        const transaction = db.transaction([storeName], "readonly");
-        const store = transaction.objectStore(storeName);
-        
-        //Recuperar el archivo de IndexedDB
-        const request = store.getAll(); //Obtener todos los archivos guardados
-        
-        request.onsuccess = function(event){
-            if (request.result.length > 0){
-                const archivo = request.result[0]; //Suponemos que solo hay un archivo guardado
-                const blob = new Blob([archivo.data], { type: archivo.type });
-                const archivoUrl = URL.createObjectURL(blob);
-                //Crear un enlace temporal para descargar el archivo
-                const enlace = document.createElement('a');
-                enlace.href = archivoUrl;
-                enlace.download = archivo.name;  //Usamos el nombre del archivo original
+    // Descargar archivo desde IndexedDB
+    btnDescargar.addEventListener("click", function() {
+        const transaction = db.transaction(["archivos"], "readonly");
+        const store = transaction.objectStore("archivos");
+
+        const request = store.get("archivoGuardado");
+
+        request.onsuccess = function(event) {
+            const result = event.target.result;
+            if (result) {
+                const archivoBlob = new Blob([result.data], { type: result.type });
+                const enlace = document.createElement("a");
+                enlace.href = URL.createObjectURL(archivoBlob);
+                enlace.download = result.name;
                 enlace.click();
-            }else{
-                alert('No hay archivo guardado para descargar.');
+            } else {
+                alert("No hay archivo guardado.");
             }
         };
     });
